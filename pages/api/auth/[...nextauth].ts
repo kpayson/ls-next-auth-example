@@ -5,6 +5,7 @@ import FacebookProvider from "next-auth/providers/facebook"
 import GithubProvider from "next-auth/providers/github"
 import TwitterProvider from "next-auth/providers/twitter"
 import Auth0Provider from "next-auth/providers/auth0"
+import LabshareProvider from "./labshareProvider";
 // import AppleProvider from "next-auth/providers/apple"
 // import EmailProvider from "next-auth/providers/email"
 import { config } from '../../../middleware';
@@ -42,19 +43,25 @@ export const authOptions: NextAuthOptions = {
     //   clientId: process.env.GITHUB_ID,
     //   clientSecret: process.env.GITHUB_SECRET,
     // }),
-    // GoogleProvider({
-    //   clientId: process.env.GOOGLE_ID,
-    //   clientSecret: process.env.GOOGLE_SECRET,
-    // }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_ID,
+      clientSecret: process.env.GOOGLE_SECRET,
+    }),
     // TwitterProvider({
     //   clientId: process.env.TWITTER_ID,
     //   clientSecret: process.env.TWITTER_SECRET,
     // }),
-    // Auth0Provider({
-    //   clientId: process.env.AUTH0_ID,
-    //   clientSecret: process.env.AUTH0_SECRET,
-    //   issuer: process.env.AUTH0_ISSUER,
-    // }),
+    Auth0Provider({
+      clientId: process.env.AUTH0_ID,
+      clientSecret: process.env.AUTH0_SECRET,
+      issuer: process.env.AUTH0_ISSUER,
+    }),
+
+    LabshareProvider({
+      clientId: process.env.LABSHARE_ID,
+      clientSecret: process.env.LABSHARE_SECRET,
+      issuer: process.env.LABSHARE_ISSUER,
+    }),
 
   //   {
   //     //authority: 'https://a-ci.labshare.org/_api/auth/ls',
@@ -90,27 +97,27 @@ export const authOptions: NextAuthOptions = {
   //   },
   // },
   // http://localhost:7007/auth/ls/
-  {
-    id: "lsauth",
-    name: "Labshare Auth",
-    type: "oauth",
-    clientId: "nextjs-demo",
-    authorization: "http://localhost:7007/_api/auth/ls/authorize",
-    token: "http://localhost:7007/_api/auth/ls/oidc/token",
-    userinfo: "http://localhost:7007/_api/auth/ls/me",
+  // {
+  //   id: "lsauth",
+  //   name: "Labshare Auth",
+  //   type: "oauth",
+  //   clientId: "nextjs-demo",
+  //   authorization: "http://localhost:7007/_api/auth/ls/authorize",
+  //   token: "http://localhost:7007/_api/auth/ls/oidc/token",
+  //   userinfo: "http://localhost:7007/_api/auth/ls/me",
     
-    //options:{}
+  //   //options:{}
 
     
-    profile(profile) {
-      return {
-        id: profile.sub,
-        name: profile.name,
-        email: profile.email,
-        image: profile.picture,
-      }
-    },
-  }
+  //   profile(profile) {
+  //     return {
+  //       id: profile.sub,
+  //       name: profile.name,
+  //       email: profile.email,
+  //       image: profile.picture,
+  //     }
+  //   },
+  // }
 
 
   ],
