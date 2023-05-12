@@ -12,5 +12,8 @@ declare namespace NodeJS {
     GOOGLE_SECRET: string
     AUTH0_ID: string
     AUTH0_SECRET: string
+
+    LABSHARE_BASEPATH: string
+    LABSHARE_TENANT: string
   }
 }
