@@ -1,0 +1,169 @@
+// import { Inject, Injectable, NgZone } from '@angular/core';
+// import { AuthorizationState, AuthService } from '@labshare/base-ui-services';
+// import { MatDialog } from '@angular/material/dialog';
+// import { GenericDialogComponent } from './generic-dialog/generic-dialog';
+// import {
+//   auditTime,
+//   firstValueFrom,
+//   forkJoin,
+//   fromEvent,
+//   Subscription,
+//   tap
+// } from 'rxjs';
+// import { OpenIdConnectSessionsService } from './api';
+// import { DOCUMENT } from '@angular/common';
+// import {
+//   clearTimeout as originalClearTimeout,
+//   setTimeout as originalSetTimeout
+// } from 'worker-timers';
+
+// @Injectable({
+//   providedIn: 'root'
+// })
+export class IdleTimeoutService {
+  private secondsInMinute = 60;
+  private millisecondsInSecond = 1000;
+  private defaultTimeout = 5 * this.secondsInMinute; // default 5 minutes idle session warning
+  private timeOut;
+  private idleSessionLifetime: number;
+  private defaultAuditTimeForEvent = 2; // default 2 seconds
+  // activity events
+  private events$ = {
+    mousemove: fromEvent(this.document, 'mousemove').pipe(
+      auditTime(this.defaultAuditTimeForEvent * this.millisecondsInSecond),
+      tap(() => this.activityHandler())
+    ),
+    mousedown: fromEvent(this.document, 'mousedown').pipe(
+      auditTime(this.defaultAuditTimeForEvent * this.millisecondsInSecond),
+      tap(() => this.activityHandler())
+    ),
+    mousewheel: fromEvent(this.document, 'mousewheel').pipe(
+      auditTime(this.defaultAuditTimeForEvent * this.millisecondsInSecond),
+      tap(() => this.activityHandler())
+    ),
+    keypress: fromEvent(this.document, 'keypress').pipe(
+      auditTime(this.defaultAuditTimeForEvent * this.millisecondsInSecond),
+      tap(() => this.activityHandler())
+    ),
+    touchstart: fromEvent(this.document, 'touchstart').pipe(
+      auditTime(this.defaultAuditTimeForEvent * this.millisecondsInSecond),
+      tap(() => this.activityHandler())
+    )
+  };
+  private sub: Subscription = new Subscription();
+  private clearTimeout = originalClearTimeout;
+  private setTimeout = originalSetTimeout;
+
+  constructor(
+    @Inject(DOCUMENT) private document: Document,
+    private ngZone: NgZone,
+    private authService: AuthService,
+    private matDialog: MatDialog,
+    private openIdConnectSessionsService: OpenIdConnectSessionsService
+  ) {
+    this.sub.add(
+      fromEvent(this.document, 'DOMContentLoaded').subscribe(() =>
+        this.checkAuthState()
+      )
+    );
+  }
+
+  /**
+   * @description checks if user is logged in
+   */
+  private checkAuthState() {
+    this.sub.add(
+      this.authService.onAuthorizationResult.subscribe((res) => {
+        if (res?.authorizationState === AuthorizationState.authorized) {
+          this.setTimer();
+        }
+      })
+    );
+  }
+
+  /**
+   * @description get idleSessionLifetime and set user activity listeners
+   */
+  public async setTimer() {
+    this.idleSessionLifetime =
+      (
+        await firstValueFrom(
+          this.openIdConnectSessionsService.getSessionIdleLifetime()
+        )
+      ).idleSessionLifetime || 20 * this.secondsInMinute; // set default idle session expiration to 20 minutes if not set
+    this.removeActivityListeners();
+    this.setActivityListeners();
+    this.activityHandler();
+  }
+
+  /**
+   * @description set all user activity listeners
+   */
+  private setActivityListeners() {
+    this.sub.add(forkJoin(this.events$).subscribe());
+  }
+
+  /**
+   * @description sets the activity timeout that will open warning dialog
+   * if there is no user activity
+   */
+  private activityHandler() {
+    this.ngZone.run(() => {
+      // clear timeout if it already exists
+      if (this.timeOut) {
+        this.clearTimeout(this.timeOut);
+        this.timeOut = null;
+      }
+
+      // set new timeout
+      this.timeOut = this.setTimeout(() => {
+        this.removeActivityListeners();
+        const dialogRef = this.matDialog.open(GenericDialogComponent, {
+          disableClose: true,
+          data: {
+            templateType: 'idleTimeout',
+            timeBeforeLogout:
+              this.idleSessionLifetime > this.defaultTimeout
+                ? this.defaultTimeout // default 5 minute countdown
+                : this.secondsInMinute // 1 minute countdown
+          }
+        });
+
+        dialogRef.afterClosed().subscribe(async (option) => {
+          switch (option) {
+            case true:
+              // extend session
+              await firstValueFrom(
+                this.openIdConnectSessionsService.extendSession()
+              );
+              this.setActivityListeners();
+              break;
+            case false:
+              // log user out
+              this.authService.logout();
+              break;
+          }
+        });
+      }, this.timeoutDelay());
+    });
+  }
+
+  private timeoutDelay() {
+    return (
+      (this.idleSessionLifetime > this.defaultTimeout // check if idleSessionLifetime is greater than 5 minutes
+        ? this.idleSessionLifetime -
+          (this.defaultTimeout + this.defaultAuditTimeForEvent) // show idle warning 5 minutes before idleSessionLifetime ends
+        : this.idleSessionLifetime -
+          (this.secondsInMinute + this.defaultAuditTimeForEvent)) * // show idle warning 1 minute before idleSessionLifetime ends
+      1000
+    );
+  }
+
+  /**
+   * @description remove all user activity listeners
+   */
+  public removeActivityListeners() {
+    this.sub.unsubscribe();
+    this.sub = new Subscription();
+  }
+}

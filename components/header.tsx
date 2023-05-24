@@ -1,6 +1,9 @@
 import Link from "next/link"
 import { signIn, signOut, useSession } from "next-auth/react"
-import styles from "./header.module.css"
+import styles from "./header.module.css";
+import { useState } from 'react';
+import IdleTimeOutHandler from '../IdleTimeOutHandler';
+
 
 // The approach used in this component shows how to build a sign in and sign out
 // component that works on pages which support both client and server side
@@ -9,11 +12,22 @@ export default function Header() {
   const { data: session, status } = useSession()
   const loading = status === "loading"
 
+  const [isActive, setIsActive] = useState(true);
+  const [isLogout, setLogout] = useState(false);
+
   return (
     <header>
       <noscript>
         <style>{`.nojs-show { opacity: 1; top: 0; }`}</style>
       </noscript>
+
+      {Boolean(session) && <IdleTimeOutHandler
+        onActive={() => { setIsActive(true) }}
+        onIdle={() => { setIsActive(false) }}
+        onLogout={() => { 
+          signOut();
+        }}
+      /> } 
       <div className={styles.signedInStatus}>
         <p
           className={`nojs-show ${

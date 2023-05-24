@@ -11,8 +11,8 @@ export default function Labshare<P extends LabshareProfile>(
   options: OAuthUserConfig<P>
 ): OAuthConfig<P> {
   return {
-    id: "labshare",
-    name: "Labshare Auth",
+    id: "nih",
+    name: "NIH Auth",
     wellKnown: `${options.issuer}/.well-known/openid-configuration`,
     type: "oauth",
     authorization: { params: { scope: "openid email profile" } },
@@ -27,8 +27,8 @@ export default function Labshare<P extends LabshareProfile>(
       }
     },
     style: {
-      logo: `${process.env.NEXTAUTH_URL}/labshare_logo.png`,
-      logoDark: `${process.env.NEXTAUTH_URL}/labshare_logo.png`,
+      logo: "/labshare_logo.png",
+      logoDark: "/labshare_logo.png",
       bg: "#fff",
       text: "#EB5424",
       bgDark: "#EB5424",

@@ -1,5 +1,5 @@
-import Layout from "../components/layout"
-
+import Layout from "../components/layout";
+import 'bootstrap/dist/css/bootstrap.min.css';
 export default function IndexPage() {
   return (
     <Layout>

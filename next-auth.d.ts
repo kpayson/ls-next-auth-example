@@ -21,6 +21,8 @@ declare module "next-auth" {
       image?: string;
       email?: string;
       name?: string;
+      accessToken: string;
+      
     },
     accessToken: string
     error?: any
