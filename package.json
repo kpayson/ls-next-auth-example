@@ -8,6 +8,7 @@
   "homepage": "https://next-auth-example.vercel.app",
   "scripts": {
     "dev": "next",
+    "dev:inspect": "NODE_OPTIONS='--inspect' next dev",
     "build": "next build",
     "start": "next start"
   },

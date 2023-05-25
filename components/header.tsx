@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { signIn, signOut, useSession } from "next-auth/react"
 import styles from "./header.module.css";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import IdleTimeOutHandler from '../IdleTimeOutHandler';
 
 
@@ -14,6 +14,12 @@ export default function Header() {
 
   const [isActive, setIsActive] = useState(true);
   const [isLogout, setLogout] = useState(false);
+
+  useEffect(() => {
+    if (session?.error === "RefreshAccessTokenError") {
+      signIn(); // Force sign in to hopefully resolve error
+    }
+  }, [session]);
 
   return (
     <header>
